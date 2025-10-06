@@ -1,72 +1,104 @@
 $(document).ready(function() {
-  const $header = $(".header-area");
-  $(window).on("scroll", function() {
-    if ($(this).scrollTop() > 1) {
-      $header.addClass("sticky");
-    } else {
-      $header.removeClass("sticky");
+    const $header = $(".header-area");
+    const $navLinks = $(".navbar ul li a");
+    const $menuIcon = $(".menu_icon");
+    const $navUl = $(".navbar ul");
+    const $firstElement = $(".FirstElement");
+    const $contactForm = $("#contact-form");
+    const $msgSpan = $("#msg");
+
+    $menuIcon.on("click", function() {
+        $navUl.toggleClass("navbar-active");
+    });
+   
+    $navLinks.on("click", function() {
+        if ($navUl.hasClass("navbar-active")) {
+            $navUl.removeClass("navbar-active");
+        }
+    });
+
+    function throttle(func, limit) {
+        let inProgress = false;
+        return function(...args) {
+            if (!inProgress) {
+                func.apply(this, args);
+                inProgress = true;
+                setTimeout(() => (inProgress = false), limit);
+            }
+        };
     }
-    updateActiveSection();
-  });
 
-  const $navLinks = $(".header ul li a");
-  $navLinks.on("click", function(e) {
-    e.preventDefault();
-    const target = $(this).attr("href");
+    function handleScroll() {
+        const scrollPosition = $(window).scrollTop();
 
-    if (target === "#home") {
-      $("html, body").animate({ scrollTop: 0 }, 500);
-    } else {
-      const offset = $(target).offset().top - $header.outerHeight();
-      $("html, body").animate({ scrollTop: offset }, 500);
+        if (scrollPosition > 50) {
+            $header.addClass("sticky");
+            $firstElement.addClass("content-push");
+        } else {
+            $header.removeClass("sticky");
+            $firstElement.removeClass("content-push");
+        }
+
+        let currentSectionId = "";
+        $("section").each(function() {
+            const sectionTop = $(this).offset().top - $header.outerHeight() - 50;
+            if (scrollPosition >= sectionTop) {
+                currentSectionId = $(this).attr("id");
+            }
+        });
+
+        $navLinks.removeClass("active");
+        $navLinks.filter(`[href="#${currentSectionId}"]`).addClass("active");
     }
 
-    $navLinks.removeClass("active");
-    $(this).addClass("active");
-  });
+    $(window).on("scroll", throttle(handleScroll, 150));
 
-  ScrollReveal({ distance: "100px", duration: 2000, delay: 200 });
-  ScrollReveal().reveal(".header a, .profile-photo, .about-content, .education", { origin: "left" });
-  ScrollReveal().reveal(".header ul, .profile-text, .about-skills, .internship", { origin: "right" });
-  ScrollReveal().reveal(".project-title, .contact-title", { origin: "top" });
-  ScrollReveal().reveal(".projects, .contact", { origin: "bottom" });
+    $navLinks.on("click", function(e) {
+        e.preventDefault();
+        const targetId = $(this).attr("href");
+        const offsetTop = $(targetId).offset().top - $header.outerHeight();
 
-  //Google Sheets Form 
+        $("html, body").animate({
+            scrollTop: offsetTop
+        }, 500);
+    });
 
-  const scriptURL = 'https://script.google.com/macros/s/AKfycbzo5OCMvXWHg99TAMQRGFbojMZx4MLCZAi9pV12WXCIJbOncRdM1lTBURmgq3MvsNiV/exec';
-  const form = document.forms['submitToGoogleSheet'];
-  const msg = $("#msg");
+    ScrollReveal({ distance: "80px", duration: 2000, delay: 200 });
+    ScrollReveal().reveal(".header, .profile-text, .about-content, .education", { origin: "left" });
+    ScrollReveal().reveal(".profile-photo, .about-skills, .internship", { origin: "right" });
+    ScrollReveal().reveal(".project-title, .contact-title", { origin: "top" });
+    ScrollReveal().reveal(".projects, .contact", { origin: "bottom" });
 
-  form.addEventListener('submit', e => {
-  e.preventDefault();
-  fetch(scriptURL, { method: 'POST', body: new FormData(form)})
-    .then(response => alert('Message sent successfully!'))
-    .catch(error => alert('Error sending message!'));
+    $contactForm.on("submit", function(e) {
+        e.preventDefault();
+        $msgSpan.text("Sending...");
+
+        fetch(this.action, {
+            method: "POST",
+            body: new FormData(this)
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Network response was not ok.');
+        })
+        .then(data => {
+            if (data.result === 'success') {
+                $msgSpan.text("Message sent successfully!");
+                $contactForm[0].reset();
+            } else {
+                throw new Error(data.message || 'Form submission failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            $msgSpan.text("Oops! Something went wrong.");
+        })
+        .finally(() => {
+            setTimeout(() => {
+                $msgSpan.text("");
+            }, 5000);
+        });
+    });
 });
-
-
-}); 
-
-function updateActiveSection() {
-  const scrollPosition = $(window).scrollTop();
-  const $navLinks = $(".header ul li a");
-  const headerHeight = $(".header-area").outerHeight();
-
-  if (scrollPosition === 0) {
-    $navLinks.removeClass("active");
-    $navLinks.filter("[href='#home']").addClass("active");
-    return;
-  }
-
-  $("section").each(function() {
-    const offset = $(this).offset().top;
-    const height = $(this).outerHeight();
-    const target = $(this).attr("id");
-
-    if (scrollPosition >= offset - headerHeight &&
-        scrollPosition < offset + height - headerHeight) {
-      $navLinks.removeClass("active");
-      $navLinks.filter("[href='#" + target + "']").addClass("active");
-    }
-  });
-}
