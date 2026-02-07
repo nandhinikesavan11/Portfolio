@@ -149,8 +149,12 @@ img {
     flex-wrap: wrap;
     gap: 40px;
 }
-.about-content, .about-skills {
+.about-content {
     flex: 1 1 400px;
+}
+.about-skills {
+    flex: 1 1 400px;
+    /* margin-bottom: 0px; */
 }
 .about-content h4, .about-skills h4 {
     font-size: 2rem;
@@ -163,8 +167,8 @@ img {
     margin-bottom: 10px;
 }
 .about-skills ul li {
-    padding-bottom: 10px;
-    margin-bottom: 10px;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
     border-bottom: 1px dashed #555;
 }
 .about-skills ul li:last-child {
